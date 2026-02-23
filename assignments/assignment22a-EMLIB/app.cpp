@@ -37,7 +37,7 @@ void app_init(void)
     */
 
     /**
-     * Your code below. Use the GPIO_PinModeSet() function to set PE2 as push/pull (output) and HIGH.
+     * Your code below. Use the GPIO_PinModeSet() function to set PE3 as push/pull (output) and HIGH.
      */
 }
 
