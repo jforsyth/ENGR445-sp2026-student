@@ -50,6 +50,8 @@ void app_init(void)
    * Set for 9600 8N1
    */
 
+
+
   // TODO: Double check that USART frequency is 48MHz with CMU_ClockFreqGet
   int USART_CLOCK = CMU_ClockFreqGet(cmuClock_USART1);
 
@@ -80,6 +82,10 @@ void app_init(void)
   USART1->ROUTE |= (0x1);
 
   // TODO: Enable TXEN and RXEN in CMD
+
+  // TODO: Enable loopback mode in USART1 so TX is internally connected to RX.
+  // This eliminates the need for a physical loopback wire between PD0 and PD1.
+  // Hint: Set the LOOPBK bit in the USART1->CTRL register.
 
   ///////////////////END USART1 CONFIGURATION///////////////////
 
