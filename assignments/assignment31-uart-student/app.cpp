@@ -23,9 +23,6 @@
 #include <em_gpio.h>
 #include <em_usart.h>
 
-#include "GPIO.h"
-#include "Helper.h"
-
 #define EIGHT_DATA_BITS 0x5
 #define ONE_STOP_BIT 0x1
 #define STOP_BIT_OFFSET 12
