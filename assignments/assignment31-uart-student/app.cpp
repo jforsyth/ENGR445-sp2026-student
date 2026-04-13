@@ -91,7 +91,7 @@ void app_init(void)
 
   // TODO: Configure the TX Pin (PD0) on Location #1 as a push-pull output
 
-  // TODO: Configure the RX Pin (PD1) on Location #1 as a push-pull input
+  // TODO: Configure the RX Pin (PD1) on Location #1 as a input
 
   ///////////////////END GPIO CONFIGURATION///////////////////
 
