@@ -83,9 +83,10 @@ void app_init(void)
 
   // TODO: Enable TXEN and RXEN in CMD
 
-  // TODO: Enable loopback mode in USART1 so TX is internally connected to RX.
-  // This eliminates the need for a physical loopback wire between PD0 and PD1.
-  // Hint: Set the LOOPBK bit in the USART1->CTRL register.
+  
+  // Enable loopback mode so TX is internally connected to RX.
+  // On real hardware this is equivalent to a physical loopback wire on PD0/PD1.
+  USART1->CTRL |= USART_CTRL_LOOPBK;
 
   ///////////////////END USART1 CONFIGURATION///////////////////
 
