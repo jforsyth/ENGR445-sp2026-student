@@ -90,6 +90,3 @@ The skeleton already has the step comments and explanations. Fill in the code at
 
 **Success Condition**
 - Once both tasks complete successfully, enter an infinite loop with a counter increment to prevent code optimization.
-
-## Reference
-Consult the Helper.h file for the `readBit()` and `setPinMode()` function signatures. The GPIO.h file contains pin mode definitions.
