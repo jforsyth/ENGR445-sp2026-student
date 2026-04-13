@@ -170,7 +170,7 @@ void app_process_action(void)
       //then you've completed the lab. Do nothing forever
       /**
        * Leave this code below to give the processor "something" to do.
-       * If there's an empty loop is may optimize away lines of code from above.
+       * If there's an empty loop it may optimize away lines of code from above.
        * Just keep it here for a sanity check.
        */
       int counter=0;

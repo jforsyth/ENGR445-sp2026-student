@@ -69,7 +69,7 @@ The skeleton already has the step comments and explanations. Fill in the code at
 
 **GPIO Configuration**
 - Configure PD0 (TX) as a push-pull output.
-- Configure PD1 (RX) as a push-pull input`.
+- Configure PD1 (RX) as an input`.
 
 ### In `app_process_action()`
 
