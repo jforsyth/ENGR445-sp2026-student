@@ -57,7 +57,7 @@ void delay(int num)
 uint8_t SPI_Transfer(uint8_t data)
 {
   //wait for space in the TX buffer
-  //use a while loop to pull until transfer buffer is empty
+  //use a while loop to poll until transfer buffer is empty
   /**
    * YOUR CODE HERE
    */
@@ -68,7 +68,7 @@ uint8_t SPI_Transfer(uint8_t data)
    */
 
   //wait for transaction to complete
-  //user a while loop to poll that transfer is complete
+  //use a while loop to poll that transfer is complete
   /**
    * YOUR CODE HERE
    */
@@ -126,7 +126,7 @@ void app_init(void)
    */
 
   /**
-   * Configure SPI to to 1 MHz
+   * Configure SPI to 2 MHz
    */
 
   //calculate desired clock divisor
