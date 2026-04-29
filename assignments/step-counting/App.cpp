@@ -84,7 +84,9 @@ bool app_init(void)
     nextState = IDLE;
 
     cout << "Initializing CSV reader..." << endl;
+    cout << "Attempting to load file: " << DEFAULT_CSV_PATH << endl;
     if(!init_csv_reader(DEFAULT_CSV_PATH)) {
+        cout << "ERROR: Failed to open file at path: " << DEFAULT_CSV_PATH << endl;
         return false;
     }
 
@@ -116,6 +118,9 @@ bool app_process_action(void)
     float y = sample.y;
     float z = sample.z;
     uint32_t timestamp_ms = sample.timestamp_ms;
+
+    // DEBUG: Uncomment the line below to print acceleration values for each sample
+    cout << "Sample - x: " << x << ", y: " << y << ", z: " << z << ", time: " << timestamp_ms << " ms" << endl;
 
     /**
      * Step 2: Begin data processing pipeline. The first action is likely to calculate the magnitude
