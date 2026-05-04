@@ -180,9 +180,9 @@ void app_process_action(void)
   /**
    * Step 1: Acquire data from input source (ADXL345 or UART)
    */
-  int16_t xAccel = accel.getXAcceleration();
-  int16_t yAccel = accel.getYAcceleration();
-  int16_t zAccel = accel.getZAcceleration();
+  int32_t xAccel = accel.getXAcceleration();
+  int32_t yAccel = accel.getYAcceleration();
+  int32_t zAccel = accel.getZAcceleration();
 
   /**
    * Step 2: Put new acceleration data through data path
