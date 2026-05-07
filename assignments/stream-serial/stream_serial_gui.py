@@ -3,8 +3,13 @@
 Gecko Serial Data Streamer with GUI
 Allows students to:
 - Select and open serial port (with auto-detection)
-- Stream data in real-time
+- Stream data in real-time (auto-starts on connect)
 - Save streamed data to a file
+
+Performance optimizations:
+- Buffered reads (4KB chunks)
+- Separate threads for data collection and GUI updates
+- Queue-based architecture to prevent data loss
 """
 
 import PySimpleGUI as sg
@@ -12,13 +17,19 @@ from serial import Serial
 import serial.tools.list_ports
 import threading
 import time
+import queue
 from datetime import datetime
 from pathlib import Path
 
 # Settings (from hil-app.py pattern)
 BAUD_RATE = 115200
-READ_TIMEOUT = 1  # Shorter timeout for GUI responsiveness
+READ_TIMEOUT = 0.1  # Shorter timeout for responsiveness
 GECKO_IDENTIFIERS = ['usbmodem', 'Silicon']
+
+# Performance settings
+READ_BUFFER_SIZE = 4096  # Read 4KB at a time for efficiency
+GUI_UPDATE_INTERVAL = 0.05  # Update GUI every 50ms (20 Hz)
+QUEUE_MAX_SIZE = 1000  # Queue size to buffer data between threads
 
 # GUI Theme
 sg.theme('DarkBlue3')
@@ -30,7 +41,9 @@ class SerialStreamer:
         self.is_streaming = False
         self.save_file = None
         self.file_handle = None
-        self.data_buffer = ""
+        self.data_queue = queue.Queue(maxsize=QUEUE_MAX_SIZE)
+        self.bytes_written = 0
+        self.bytes_received = 0
         
     def find_gecko_ports(self):
         """Find all available ports, highlight Gecko if found"""
@@ -102,36 +115,48 @@ class SerialStreamer:
         """Set file to save data to"""
         try:
             self.save_file = file_path
-            self.file_handle = open(file_path, 'w')
-            return True, f"Saving to: {file_path}"
+            self.file_handle = open(file_path, 'w', buffering=8192)  # 8KB buffer
+            self.bytes_written = 0
+            return True, f"📝 Recording to: {Path(file_path).name}"
         except Exception as e:
             return False, f"Failed to open file: {e}"
     
     def stop_saving(self):
         """Close the save file"""
         if self.file_handle:
+            self.file_handle.flush()
             self.file_handle.close()
             self.file_handle = None
+            saved_file = self.save_file
             self.save_file = None
+            return saved_file
+        return None
     
-    def read_data(self):
-        """Read data from serial port (called by thread)"""
+    def read_data_chunk(self):
+        """Read chunk of data from serial port (called by high-priority thread)"""
         try:
             if not self.ser or not self.ser.is_open:
                 return None
             
-            data = self.ser.read(1)
+            # Read up to READ_BUFFER_SIZE bytes
+            data = self.ser.read(READ_BUFFER_SIZE)
             if data:
-                char = data.decode('utf-8', errors='replace')
+                self.bytes_received += len(data)
+                text = data.decode('utf-8', errors='replace')
                 
-                # Filter out control characters, keep printable ASCII (32-126) and line breaks
-                if ord(char) >= 32 or char in '\n\r':
-                    # Optionally save to file
-                    if self.file_handle:
-                        self.file_handle.write(char)
+                # Filter control characters but keep newlines/returns
+                filtered = ''.join(char for char in text 
+                                 if ord(char) >= 32 or char in '\n\r')
+                
+                # Immediately save to file if open (high priority)
+                if self.file_handle and filtered:
+                    self.file_handle.write(filtered)
+                    self.bytes_written += len(filtered)
+                    # Flush every ~8KB for balance of performance and safety
+                    if self.bytes_written % 8192 < len(filtered):
                         self.file_handle.flush()
-                    
-                    return char
+                
+                return filtered if filtered else None
         except Exception as e:
             print(f"Error reading serial data: {e}")
         
@@ -172,23 +197,31 @@ def main():
         
         [sg.Text("_" * 60)],
         
-        # Start/Stop streaming
+        # File recording controls
         [
-            sg.Text("Streaming:", size=(12, 1)),
-            sg.Button("Start", size=(12, 1), key="-START-", disabled=True),
-            sg.Button("Stop", size=(12, 1), key="-STOP-", disabled=True),
-            sg.VerticalSeparator(),
-            sg.Text("Filename:", size=(10, 1)),
-            sg.InputText(key="-FILEPATH-", size=(22, 1), disabled=True),
-            sg.Button("Browse", size=(8, 1), key="-BROWSE-", disabled=True),
-            sg.Button("Save Data", size=(10, 1), key="-SAVE-", disabled=True),
+            sg.Text("Filename:", size=(12, 1)),
+            sg.InputText("data.csv", key="-FILEPATH-", size=(30, 1), disabled=True),
+            sg.Button("Browse", size=(10, 1), key="-BROWSE-", disabled=True),
+            sg.Button("🔴 Record", size=(14, 1), key="-RECORD-", disabled=True, button_color=('white', 'red')),
+        ],
+        
+        # File recording indicator
+        [
+            sg.Text("", key="-RECORDING-", size=(60, 1), 
+                   font=("Helvetica", 12, "bold"), text_color="red", visible=False)
+        ],
+        
+        # Stats
+        [
+            sg.Text("Received: 0 bytes", key="-STATS-", size=(30, 1), text_color="cyan"),
+            sg.Text("Saved: 0 bytes", key="-SAVED-", size=(30, 1), text_color="lime", visible=False)
         ],
         
         [sg.Text("_" * 60)],
         
         # Data display area
         [sg.Text("Serial Data Output:")],
-        [sg.Multiline(size=(80, 20), key="-OUTPUT-", 
+        [sg.Multiline(size=(80, 18), key="-OUTPUT-", 
                      disabled=True, autoscroll=True)],
         
         # Clear button
@@ -201,14 +234,56 @@ def main():
     
     # Threading variables
     read_thread = None
+    gui_update_thread = None
     
     def read_thread_func():
-        """Thread function to read serial data"""
+        """High-priority thread: read serial data and write to file immediately"""
         while streamer.is_streaming and streamer.ser and streamer.ser.is_open:
-            char = streamer.read_data()
-            if char:
-                window["-OUTPUT-"].print(char, end='')
-            time.sleep(0.001)  # Small delay to prevent CPU spinning
+            chunk = streamer.read_data_chunk()
+            if chunk:
+                # Try to queue for GUI (non-blocking)
+                try:
+                    streamer.data_queue.put_nowait(chunk)
+                except queue.Full:
+                    # Queue full - data still saved to file, just won't show in GUI
+                    print("GUI queue full - some display data dropped (file OK)")
+            else:
+                # No data available, small sleep to prevent CPU spinning
+                time.sleep(0.01)
+    
+    def gui_update_thread_func():
+        """Lower-priority thread: update GUI with queued data"""
+        accumulated = []
+        last_update = time.time()
+        
+        while streamer.is_streaming:
+            try:
+                # Collect data from queue
+                while True:
+                    try:
+                        chunk = streamer.data_queue.get_nowait()
+                        accumulated.append(chunk)
+                    except queue.Empty:
+                        break
+                
+                # Update GUI periodically
+                now = time.time()
+                if accumulated and (now - last_update >= GUI_UPDATE_INTERVAL):
+                    text = ''.join(accumulated)
+                    window["-OUTPUT-"].print(text, end='')
+                    accumulated.clear()
+                    last_update = now
+                
+                time.sleep(0.01)  # Small sleep
+                
+            except Exception as e:
+                print(f"GUI update error: {e}")
+                time.sleep(0.1)
+        
+        # Flush remaining data
+        if accumulated:
+            text = ''.join(accumulated)
+            window["-OUTPUT-"].print(text, end='')
     
     # Main event loop
     try:
@@ -233,49 +308,52 @@ def main():
                 
                 success, msg = streamer.connect(values["-PORT-"])
                 if success:
-                    window["-STATUS-"].update(msg, text_color="green")
+                    # Auto-start streaming when connected
+                    streamer.is_streaming = True
+                    streamer.bytes_received = 0
+                    
+                    window["-STATUS-"].update(msg + " - Live streaming...", text_color="green")
                     window["-CONNECT-"].update(disabled=True)
                     window["-DISCONNECT-"].update(disabled=False)
-                    window["-START-"].update(disabled=False)
                     window["-PORT-"].update(disabled=True)
+                    window["-RECORD-"].update(disabled=False)
+                    window["-BROWSE-"].update(disabled=False)
+                    window["-FILEPATH-"].update(disabled=False)
+                    window["-STATS-"].update("Received: 0 bytes")
+                    
+                    # Start both threads
+                    read_thread = threading.Thread(target=read_thread_func, daemon=True)
+                    gui_update_thread = threading.Thread(target=gui_update_thread_func, daemon=True)
+                    read_thread.start()
+                    gui_update_thread.start()
                 else:
                     window["-STATUS-"].update(msg, text_color="red")
             
             elif event == "-DISCONNECT-":
+                # Stop streaming
+                streamer.is_streaming = False
+                if read_thread:
+                    read_thread.join(timeout=1)
+                if gui_update_thread:
+                    gui_update_thread.join(timeout=1)
+                
+                # Stop file saving if active
+                saved_file = streamer.stop_saving()
+                if saved_file:
+                    sg.popup(f"✅ Saved {streamer.bytes_written:,} bytes to {Path(saved_file).name}", 
+                            title="Recording Saved", keep_on_top=True)
+                
                 streamer.disconnect()
                 window["-STATUS-"].update("Not connected", text_color="orange")
                 window["-CONNECT-"].update(disabled=False)
                 window["-DISCONNECT-"].update(disabled=True)
-                window["-START-"].update(disabled=True)
-                window["-STOP-"].update(disabled=True)
-                window["-SAVE-"].update(disabled=True)
+                window["-RECORD-"].update("🔴 Record", disabled=True, button_color=('white', 'red'))
                 window["-BROWSE-"].update(disabled=True)
-                window["-FILEPATH-"].update(disabled=True, value="")
+                window["-FILEPATH-"].update(disabled=True, value="data.csv")
                 window["-PORT-"].update(disabled=False)
-                streamer.stop_saving()
-            
-            elif event == "-START-":
-                if not streamer.ser or not streamer.ser.is_open:
-                    sg.popup_error("Not connected!")
-                    continue
-                
-                streamer.is_streaming = True
-                window["-START-"].update(disabled=True)
-                window["-STOP-"].update(disabled=False)
-                window["-SAVE-"].update(disabled=False)
-                window["-BROWSE-"].update(disabled=False)
-                window["-FILEPATH-"].update(disabled=False)
-                
-                # Start read thread
-                read_thread = threading.Thread(target=read_thread_func, daemon=True)
-                read_thread.start()
-            
-            elif event == "-STOP-":
-                streamer.is_streaming = False
-                if read_thread:
-                    read_thread.join(timeout=1)
-                window["-START-"].update(disabled=False)
-                window["-STOP-"].update(disabled=True)
+                window["-RECORDING-"].update(visible=False)
+                window["-SAVED-"].update(visible=False)
+                window["-STATS-"].update("Received: 0 bytes")
             
             elif event == "-BROWSE-":
                 # Open file browser dialog
@@ -288,32 +366,57 @@ def main():
                 if file_path:
                     window["-FILEPATH-"].update(file_path)
             
-            elif event == "-SAVE-":
-                filepath = values["-FILEPATH-"].strip()
-                
-                if not filepath:
-                    sg.popup_error("Please enter or select a filename!")
-                    continue
-                
+            elif event == "-RECORD-":
                 if not streamer.is_streaming:
-                    sg.popup_error("Start streaming first!")
+                    sg.popup_error("Not connected! Connect to serial port first.")
                     continue
                 
-                # Add .csv extension if no extension provided
-                if "." not in filepath.split("/")[-1].split("\\")[-1]:
-                    filepath = filepath + ".csv"
-                
-                success, msg = streamer.set_save_file(filepath)
-                if success:
-                    window["-STATUS-"].update(msg, text_color="green")
-                    window["-SAVE-"].update(disabled=True)
-                    window["-BROWSE-"].update(disabled=True)
-                    window["-FILEPATH-"].update(disabled=True)
+                # Toggle recording
+                if not streamer.file_handle:
+                    # Start recording
+                    filepath = values["-FILEPATH-"].strip()
+                    
+                    # Default to data.csv if empty
+                    if not filepath:
+                        filepath = "data.csv"
+                    
+                    # Add .csv extension if no extension provided
+                    if "." not in filepath.split("/")[-1].split("\\")[-1]:
+                        filepath = filepath + ".csv"
+                    
+                    success, msg = streamer.set_save_file(filepath)
+                    if success:
+                        window["-STATUS-"].update(msg, text_color="green")
+                        window["-RECORDING-"].update(f"🔴 RECORDING TO FILE: {Path(filepath).name}", 
+                                                     visible=True)
+                        window["-SAVED-"].update("Saved: 0 bytes", visible=True)
+                        window["-RECORD-"].update("⏹️ Stop Recording", button_color=('white', 'darkred'))
+                        window["-BROWSE-"].update(disabled=True)
+                        window["-FILEPATH-"].update(disabled=True)
+                    else:
+                        window["-STATUS-"].update(msg, text_color="red")
                 else:
-                    window["-STATUS-"].update(msg, text_color="red")
+                    # Stop recording
+                    saved_file = streamer.stop_saving()
+                    if saved_file:
+                        sg.popup(f"✅ Saved {streamer.bytes_written:,} bytes to {Path(saved_file).name}", 
+                                title="Recording Saved", keep_on_top=True)
+                        window["-STATUS-"].update(f"Recording stopped - {streamer.bytes_written:,} bytes saved", 
+                                                 text_color="green")
+                    window["-RECORDING-"].update(visible=False)
+                    window["-SAVED-"].update(visible=False)
+                    window["-RECORD-"].update("🔴 Record", button_color=('white', 'red'))
+                    window["-BROWSE-"].update(disabled=False)
+                    window["-FILEPATH-"].update(disabled=False)
             
             elif event == "Clear Output":
                 window["-OUTPUT-"].update("")
+            
+            # Update stats periodically (every event loop iteration)
+            if streamer.is_streaming:
+                window["-STATS-"].update(f"Received: {streamer.bytes_received:,} bytes")
+                if streamer.file_handle:
+                    window["-SAVED-"].update(f"Saved: {streamer.bytes_written:,} bytes")
     
     except Exception as e:
         sg.popup_error(f"Error: {e}")

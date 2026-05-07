@@ -1,4 +1,4 @@
-# Streaming and Capturing Serial Data from the Gecko Board
+# Streaming Serial Data from the Gecko Board
 
 Use the **Arduino IDE 1.x Serial Monitor** to view and capture data from the Gecko board. This works the same way on Windows, macOS, and Linux.
 
@@ -67,7 +67,16 @@ Once you have collected enough data:
 
 # Alternative: Using the Gecko Serial GUI Tool
 
-If you prefer a more automated approach, use the **stream_serial_gui.py** tool—a Python GUI application that automatically filters out control characters and streams clean data to a file.
+If you prefer a more automated approach, use the **stream_serial_gui.py** tool—a high-performance Python GUI application that automatically streams data with no lag and allows you to record to a file with a single button press.
+
+## Features
+
+- **Auto-streaming:** Data streams live immediately when you connect—no manual start/stop needed
+- **High performance:** Buffered reads (4KB chunks) prevent data loss even at 115200 baud
+- **One-button recording:** Press "Record" to start saving, press again to stop
+- **Automatic filtering:** Control characters are filtered out automatically
+- **Live statistics:** See bytes received and bytes saved in real-time
+- **Cross-platform:** Works on Windows, macOS, and Linux
 
 ## Step 1: Install Python 3
 
@@ -111,16 +120,26 @@ A window should appear with the title "Gecko Serial Data Streamer".
 
 ## Step 5: Connect and Stream
 
-1. **Select Port:** Choose your Gecko board from the "Serial Port" dropdown (it will be labeled `[GECKO]` if detected automatically)
+1. **Select Port:** Choose your Gecko board from the "Serial Port" dropdown
+   - Gecko boards are automatically labeled with `[GECKO]` for easy identification
+   - Click **"Refresh Ports"** if your board doesn't appear
 2. **Connect:** Click the **"Connect"** button
-3. **Specify File:** Enter a filename (e.g., `data.csv`) in the text field
-4. **Save Data:** Click **"Save Data"** to start writing to the file
-5. **Start Streaming:** Click the **"Start"** button to begin capturing serial data
-6. The output appears in real-time in the display window **and** is saved to your file
-7. **Stop:** Click **"Stop"** to end streaming
-
-The GUI automatically filters out control characters, so the saved file contains only clean, readable text.
-
+   - Data starts streaming immediately in the display window
+   - Live byte counter shows data being received
+3. **Record to File (Optional):**
+   - The filename defaults to `data.csv` (you can change it or browse for a different location)
+   - Click the **"🔴 Record"** button to start saving data to the file
+   - The button changes to **"⏹️ Stop Recording"** and a red banner shows which file is being recorded to
+   - Live byte counters show both received and saved data
+   - Click **"⏹️ Stop Recording"** to finish—a popup confirms how many bytes were saved
+4. *Zero lag:** Buffered reads (4KB chunks) with separate threads prevent data loss
+- **Auto-streaming:** Data displays immediately when you connect—no extra buttons to click
+- **Simple recording:** One button to start, same button to stop and save
+- **Automatic filtering:** Control characters and escape sequences are filtered out
+- **Live preview:** See the data streaming in real-time while it's being saved
+- **Performance monitoring:** Live byte counters show exactly how much data has been received and saved
+- **Cross-platform:** Works identically on Windows, macOS, and Linux
+- **Hands-free operation:** Once connected, just press Record when ready—your board controls the data flow
 ## Why Use the GUI Tool?
 
 - **Automatic filtering:** Control characters and escape sequences are filtered out automatically
@@ -158,24 +177,41 @@ The GUI automatically filters out control characters, so the saved file contains
   ```bash
   pip install PySimpleGUI
   ```
-
-**No ports showing in the GUI dropdown**
-- Make sure the board is connected via USB
+Click the **"Refresh Ports"** button
 - Try unplugging and replugging the board
-- Restart the GUI tool
+- Restart the GUI tool if necessary
 
 **No data appearing in the output window**
-- Verify the baud rate is set to **115200** on the Gecko board firmware
+- Make sure you clicked **"Connect"** first (data streams automatically after connecting)
+- Verify your board is actually sending data (check firmware)
 - Try pressing the reset button on the board
-- Check that the correct port is selected
+- Confirm the board is configured for 115200 baud
 
-**File is empty or incomplete**
-- Make sure you clicked **"Save Data"** before clicking **"Start"**
-- Keep the GUI running long enough to collect data
+**Recording button doesn't work**
+- You must be **connected** to a serial port first
+- If the button is greyed out, click **"Connect"** first
+
+**Data appears in the GUI but file is empty**
+- Make sure you clicked the **"🔴 Record"** button (not just Connect)
+- The file is only written when recording is active (red banner shows "RECORDING TO FILE")
+- Click **"⏹️ Stop Recording"** to flush and close the file
 - Check that you have write permissions to the folder
+
+**Screen updates are laggy or data seems slow**
+- The GUI is already optimized with 4KB buffered reads
+- If you still see issues, your computer may be under heavy load
+- The file will still capture all data even if the display lags (file writes have priority)
 
 **"ModuleNotFoundError: No module named 'serial'"**
 - Install pyserial with:
+  ```bash
+  pip install pyserial
+  ```
+
+**Recording stopped but I can't find my file**
+- By default, files are saved in the same directory where you ran the script
+- Check the working directory with `pwd` (macOS/Linux) or `cd` (Windows)
+- Use the **"Browse"** button before recording to choose a specific locationtall pyserial with:
   ```bash
   pip install pyserial
   ```
