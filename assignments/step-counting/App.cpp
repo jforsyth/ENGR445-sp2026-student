@@ -40,7 +40,7 @@ using namespace std;
  *   - p11.3_Male_20-29_170-179cm_Backpack.out.csv (76 steps)
  *   - p27.1_Male_15-19_170-179cm_Hand_held.dat.csv (68 steps)
  */
-const char* DEFAULT_CSV_PATH = "p27.1_Male_15-19_170-179cm_Hand_held.dat.csv";
+const char* DEFAULT_CSV_PATH = "p1.1_Female_20-29_170-179cm_Hand_held.out.csv";
 
 /**
  * Create a file input stream that we will constantly read from.
@@ -84,9 +84,7 @@ bool app_init(void)
     nextState = IDLE;
 
     cout << "Initializing CSV reader..." << endl;
-    cout << "Attempting to load file: " << DEFAULT_CSV_PATH << endl;
     if(!init_csv_reader(DEFAULT_CSV_PATH)) {
-        cout << "ERROR: Failed to open file at path: " << DEFAULT_CSV_PATH << endl;
         return false;
     }
 
@@ -118,6 +116,7 @@ bool app_process_action(void)
     float y = sample.y;
     float z = sample.z;
     uint32_t timestamp_ms = sample.timestamp_ms;
+
 
     // DEBUG: Uncomment the line below to print acceleration values for each sample
     cout << "Sample - x: " << x << ", y: " << y << ", z: " << z << ", time: " << timestamp_ms << " ms" << endl;
