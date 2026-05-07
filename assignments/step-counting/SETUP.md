@@ -1,50 +1,61 @@
 # Step Counting Project — Development Setup Guide
 
-This guide will walk you through setting up Visual Studio Code and C++ development tools to build, run, and debug the step-counting project. 
+## Before You Start
 
-**Choose your operating system below:**
+You should have received a file called **`step-counting-starter.zip`**. Unzip it to a folder on your computer (e.g., your Desktop or Documents). All of the starter code and data files are included.
+
+Then follow the steps below to install CLion and get started.
 
 ---
 
-## 1. Install Visual Studio Code
+## 1. Install CLion
 
-Download from: https://code.visualstudio.com/
+**CLion** is a professional C++ IDE from JetBrains that provides excellent debugging, CMake integration, and code navigation out of the box. It's free for students.
+
+### Get Your Free Student License
+
+1. Go to: https://www.jetbrains.com/community/education/#students
+2. Click **"Apply now"** and sign up using your **`.edu` email address**
+3. JetBrains will send you a confirmation email with activation instructions
+4. Follow the link to activate your free student license (valid for 1 year, renewable)
+
+### Download and Install CLion
+
+Download from: https://www.jetbrains.com/clion/download/
 
 - **Windows:** Download `.exe` installer and run it
-- **macOS:** Download `.zip` for your architecture (Apple Silicon or Intel), extract, and drag VS Code to Applications
-- **Linux:** Use your package manager or download `.tar.gz` from the website
+- **macOS:** Download `.dmg`, open it, and drag CLion to Applications
+- **Linux:** Download `.tar.gz`, extract, and run `bin/clion.sh`
 
-Launch VS Code when complete.
+Launch CLion when complete. Sign in with your JetBrains account to activate your student license.
 
 ---
 
 ## 2. Install C++ Toolchain
 
-Choose your operating system:
+CLion requires a C++ compiler and CMake. Follow the instructions for your operating system:
 
 ### Windows
 
-Download and install **one of these**:
+**Install MSYS2** (includes GCC compiler, GDB debugger, and build tools):
 
-**Option A: MinGW (easier, smaller)**
-1. Download from: https://www.mingw-w64.org/
-2. Run the installer
-3. Select: Architecture = x86_64, Threads = posix
-4. Install to: `C:\mingw64`
-5. Add to PATH: Search "Environment Variables" → Edit System Environment Variables → Under "Path", add `C:\mingw64\bin`
+1. Download from: https://www.msys2.org/ and run the installer
+2. Accept the default install location (`C:\msys64`)
+3. When the installer finishes, open **"MSYS2 UCRT64"** from the Start menu
+4. In the MSYS2 terminal, run:
+   ```
+   pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-gdb mingw-w64-ucrt-x86_64-cmake make
+   ```
+5. Add to PATH: Search "Environment Variables" → Edit System Environment Variables → under **Path**, add:
+   ```
+   C:\msys64\ucrt64\bin
+   ```
+6. **Restart your computer** (PATH changes require restart on Windows)
 
-**Option B: Microsoft Visual C++ Build Tools (larger, official)**
-1. Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
-2. Run installer and select "Desktop development with C++"
-3. Complete installation
-
-Verify installation (open Command Prompt or PowerShell):
+Verify installation — open a new Command Prompt or PowerShell and run:
 ```cmd
 gcc --version
-```
-or
-```cmd
-cl.exe
+cmake --version
 ```
 
 ### macOS
@@ -55,212 +66,110 @@ Install Apple's command-line tools:
 xcode-select --install
 ```
 
-When prompted, click **Install**. This installs `clang` (the C++ compiler).
+When prompted, click **Install**. This installs `clang` (the C++ compiler) and build tools.
+
+Install CMake using Homebrew (install Homebrew from https://brew.sh/ if needed):
+```bash
+brew install cmake
+```
 
 Verify it worked:
 ```bash
 clang --version
+cmake --version
 ```
 
 ### Linux
 
-Install the GNU C++ compiler and build tools:
+Install the GNU C++ compiler, GDB, CMake, and build tools:
 
 **Ubuntu/Debian:**
 ```bash
 sudo apt update
-sudo apt install build-essential g++ gdb
+sudo apt install build-essential g++ gdb cmake
 ```
 
 **Fedora/CentOS:**
 ```bash
-sudo dnf install gcc-c++ gdb make
+sudo dnf install gcc-c++ gdb cmake make
 ```
 
 **Arch:**
 ```bash
-sudo pacman -S base-devel gdb
+sudo pacman -S base-devel gdb cmake
 ```
 
 Verify it worked:
 ```bash
 g++ --version
-```
-
----
-
-## 3. Install CMake
-
-CMake is the build system used for this project.
-
-### Windows
-
-Download from: https://cmake.org/download/
-
-- Choose "Windows x64 Installer"
-- Run it
-- **Important:** During installation, select "Add CMake to system PATH"
-
-### macOS
-
-Using Homebrew (install from https://brew.sh/ if needed):
-```bash
-brew install cmake
-```
-
-Or download directly from: https://cmake.org/download/ (choose macOS `.dmg`)
-
-### Linux
-
-**Ubuntu/Debian:**
-```bash
-sudo apt install cmake
-```
-
-**Fedora/CentOS:**
-```bash
-sudo dnf install cmake
-```
-
-**Arch:**
-```bash
-sudo pacman -S cmake
-```
-
-Verify it worked (all platforms):
-```bash
 cmake --version
 ```
 
-You should see: `cmake version X.XX.X`
-
 ---
 
-## 4. Install VSCode Extensions
+## 3. Open the Project in CLion
 
-Open VS Code and go to the **Extensions** panel:
-- **Windows/Linux:** Ctrl+Shift+X
-- **macOS:** Cmd+Shift+X
-
-1. **C/C++ Extension Pack** by Microsoft
-   - Search for `ms-vscode.cpptools-extension-pack`
-   - Click **Install**
-   - This includes IntelliSense, debugging, and CMake tools
-
-2. **CMake** by twxs (if not already included)
-   - Search for `twxs.cmake`
-   - Click **Install**
-
----
-
-## 4a. Disable GitHub Copilot Inline Completion (Optional)
-
-If you have GitHub Copilot installed and want to disable inline code suggestions (to avoid relying on AI suggestions while learning):
-
-1. Open VS Code Settings:
-   - **Windows/Linux:** File → Preferences → Settings (or Ctrl+,)
-   - **macOS:** Code → Preferences → Settings (or Cmd+,)
-
-2. Search for: `copilot.inlineChat.enabled`
-
-3. Uncheck the box or set to `false`
-
-4. Also search for: `github.copilot.editor.enableAutoCompletions`
-   - Uncheck or set to `false`
-
-You can re-enable these anytime by returning to Settings. VS Code will remember your preference.
-
-## 5. Open the Project
-
-1. Open VS Code
-2. Go to **File → Open Folder**
-3. Navigate to the `step-counting` project folder
+1. Launch CLion
+2. On the welcome screen, click **"Open"**
+3. Navigate to the `step-counting` project folder (where `CMakeLists.txt` is located)
 4. Click **Open**
 
-VS Code will detect the CMake project automatically.
+CLion will automatically detect the CMake project and begin configuring it.
 
 ---
 
-## 6. Configure and Build
+## 4. Configure the Toolchain (First Time Only)
 
-### First Time Build
+When you first open the project, CLion will detect your compiler and configure CMake automatically.
 
-When you open the project, VS Code should show a notification: **"Do you want to configure project 'step_counting'?"**
-- Click **Yes**
-- Select your compiler:
-  - **Windows with MinGW:** Select `gcc` 
-  - **Windows with MSVC:** Select `msvc`
-  - **macOS:** Select `clang` or `Apple Clang`
-  - **Linux:** Select `gcc` or `clang`
-- Wait for the configuration to complete
-
-### Manual Configuration
-
-If you don't see the notification, open the Command Palette:
-- **Windows/Linux:** Ctrl+Shift+P
-- **macOS:** Cmd+Shift+P
-
-Type: `CMake: Configure` and press Enter, then select your compiler.
-
-### Building
-
-Once configured, build the project:
-
-**Option A: Via Command Palette** (all platforms)
-- Open Command Palette (Ctrl+Shift+P or Cmd+Shift+P)
-- Type `CMake: Build` → Press Enter
-
-**Option B: Click the Build button**
-- Look for the **Build** button in the CMake toolbar (bottom of VS Code)
-
-**Option C: Via Terminal** (all platforms)
-
-Open the integrated terminal (Ctrl+` or Cmd+`) and run:
-
-```bash
-cd build
-cmake .. && cmake --build .
-```
-
-Or on Windows (if using MSVC):
-```cmd
-cd build
-cmake .. && cmake --build . --config Release
-```
-
-✅ You should see: `[100%] Built target step_counting` or `Built target step_counting`
-
----
-
-## 7. Run the Project
-
-### From VS Code
-
-**Option A: Debug with breakpoints** (all platforms)
-- Press **F5** or go to **Run → Start Debugging**
-- The program will start; click the play button in the debug toolbar to run through it
-- You can set breakpoints by clicking on line numbers
-
-**Option B: Run without debugging** (all platforms)
-- Press **Ctrl+F5** (Windows/Linux) or **Cmd+F5** (macOS)
-- Or go to **Run → Run Without Debugging**
-- Output appears in the integrated terminal
-
-### From Terminal (all platforms)
-
-Open the integrated terminal (Ctrl+` or Cmd+`) and run:
+### If CLion asks you to select a toolchain:
 
 **Windows:**
-```cmd
-build\step_counting.exe
-```
+- Select **"MinGW"** or **"GCC"** (points to your MSYS2 installation)
+- CLion should auto-detect `C:\msys64\ucrt64\bin\gcc.exe`
+- If not found, go to **File → Settings → Build, Execution, Deployment → Toolchains** and add the path manually
 
-**macOS/Linux:**
-```bash
-./build/step_counting
-```
+**macOS:**
+- Select **"Clang"** or **"Apple Clang"**
+- CLion auto-detects this from `xcode-select`
 
-You should see output like:
+**Linux:**
+- Select **"GCC"** or **"System GCC"**
+- CLion auto-detects this from `/usr/bin/g++`
+
+### Verify Configuration
+
+Look at the bottom of the CLion window:
+- You should see: **"CMake: Build finished"** or **"CMake loaded successfully"**
+- If you see errors, go to **File → Settings → Build, Execution, Deployment → CMake** and click **"Reset Cache and Reload Project"**
+
+---
+
+## 5. Build the Project
+
+CLion makes building easy:
+
+**Option 1: Click the hammer icon** 🔨
+- Located in the top-right toolbar
+- Or press **Ctrl+F9** (Windows/Linux) or **Cmd+F9** (macOS)
+
+**Option 2: Use the Build menu**
+- Go to **Build → Build Project**
+
+✅ You should see: **"Build finished"** in the Build panel at the bottom
+
+---
+
+## 6. Run the Project
+
+**Option 1: Click the green play button** ▶️
+- Located in the top-right toolbar next to the hammer icon
+- Or press **Shift+F10** (Windows/Linux) or **Ctrl+R** (macOS)
+
+**Option 2: Use the Run menu**
+- Go to **Run → Run 'step_counting'**
+
+You should see output in the **Run** panel at the bottom:
 ```
 Initializing CSV reader...
 Header line skipped: ...
@@ -269,30 +178,41 @@ No more samples available. Exiting.
 
 ---
 
-## 8. Setting Up Debugging
+## 7. Debugging
 
-To debug your code with breakpoints and variable inspection:
+CLion's debugger is powerful and easy to use:
 
-1. Open a source file (e.g., `App.cpp`)
-2. **Set a breakpoint** by clicking on a line number (a red dot appears)
-3. Press **F5** to start debugging
-4. The program will pause at your breakpoint
-5. Use the debug toolbar to:
-   - **Step over** (F10) — execute one line
-   - **Step into** (F11) — enter a function
-   - **Continue** (F5) — resume execution
-6. Watch variables in the **Variables** pane on the left
+### Set a Breakpoint
 
-### Viewing Variables During Debug
+1. Open `App.cpp` in the editor
+2. Click in the **gutter** (left margin) next to a line number
+3. A red dot appears — this is your breakpoint
 
-When paused at a breakpoint:
-- The **Variables** pane shows local variables and their values
-- Hover over variable names in the editor to see their values
-- Right-click in the **Variables** pane to add watches
+### Start Debugging
+
+**Option 1: Click the green bug icon** 🐛
+- Located in the top-right toolbar
+- Or press **Shift+F9** (Windows/Linux) or **Ctrl+D** (macOS)
+
+**Option 2: Use the Run menu**
+- Go to **Run → Debug 'step_counting'**
+
+### Use the Debugger
+
+When the program pauses at your breakpoint:
+
+- **Variables panel** (bottom left): Shows all local variables and their values
+- **Debugger toolbar** (top):
+  - **Step Over (F8)**: Execute one line
+  - **Step Into (F7)**: Enter a function call
+  - **Step Out (Shift+F8)**: Exit current function
+  - **Resume (F9)**: Continue to next breakpoint
+- **Hover over variables** in the code editor to see their values
+- **Watches panel**: Right-click a variable → "Add to Watches" to monitor it continuously
 
 ---
 
-## 9. Project Structure
+## 8. Project Structure
 
 ```
 step-counting/
@@ -300,53 +220,55 @@ step-counting/
 ├── main.cpp              # Entry point (calls app_init, app_process_action loop)
 ├── App.h                 # Declarations, AccelSample struct, CSV infrastructure
 ├── App.cpp               # Global state, algorithms, main loop
-├── build/                # Build output (generated by CMake)
+├── cmake-build-debug/    # Build output (generated by CLion)
 └── *.csv                 # Sample acceleration data files
 ```
 
+> **Note:** CLion creates `cmake-build-debug/` for debug builds and `cmake-build-release/` for release builds. You don't need to manage these folders manually.
+
 ---
 
-## 10. Common Issues
+## 9. Common Issues
 
-### Issue: "cmake: command not found" or "cmake is not recognized"
-**Solution:** Reinstall CMake (step 3) and make sure to add it to PATH during installation
+### Issue: "CMake Error: Could not find CMAKE_CXX_COMPILER"
+**Solution:**
+- **Windows:** Make sure MSYS2 is installed and `C:\msys64\ucrt64\bin` is in your PATH. Restart CLion after adding to PATH.
+- **macOS:** Run `xcode-select --install` in Terminal
+- **Linux:** Install build tools with your package manager (see step 2)
+- In CLion, go to **File → Settings → Build, Execution, Deployment → Toolchains** and verify the compiler path
 
-### Issue: "gcc/g++/clang: command not found" or compiler not recognized
-**Solution:** 
-- **Windows MinGW:** Reinstall MinGW and add `C:\mingw64\bin` to System PATH
-- **Windows MSVC:** Install Visual C++ Build Tools (step 2, Option B)
-- **macOS:** Run `xcode-select --install`
-- **Linux:** Install compiler with package manager (step 2)
-
-### Issue: CMake configuration fails
-**Solution:** 
-- Delete the entire `build/` folder
-- Reopen VS Code
-- Try configuring again via Command Palette
+### Issue: "CMake executable not found"
+**Solution:**
+- Make sure CMake is installed (step 2)
+- **Windows:** Verify `cmake --version` works in a new Command Prompt. If not, reinstall MSYS2 and include CMake in the `pacman` command.
+- In CLion, go to **File → Settings → Build, Execution, Deployment → CMake** and verify the CMake path
 
 ### Issue: Build fails with "undefined reference"
-**Solution:** Make sure all `.cpp` files are listed in `CMakeLists.txt`
-
-### Issue: VSCode doesn't recognize C++ syntax
 **Solution:**
-- Install the C/C++ Extension Pack (step 4)
-- Reload VS Code: Command Palette → `Reload Window`
-
-### Issue: Debugger won't launch
-**Solution:**
-- Make sure the project built successfully (no compile errors)
-- Try deleting `build/` and rebuilding clean
-- **Windows MinGW users:** You may need to install debugging symbols
+- Make sure all `.cpp` files are listed in `CMakeLists.txt`
+- Go to **File → Invalidate Caches / Restart** in CLion
+- Try **Tools → CMake → Reset Cache and Reload Project**
 
 ### Issue: Program runs but immediately exits
 **Solution:**
 - Check that CSV data files exist in the project folder
 - Verify `DEFAULT_CSV_PATH` in `App.h` points to a valid file
-- Run from the project's root directory, not from `build/`
+- The working directory in CLion is automatically set to the project root, so relative paths should work
+
+### Issue: Debugger won't launch or shows "cannot find debugger"
+**Solution:**
+- **Windows:** Make sure you installed GDB via MSYS2: `pacman -S mingw-w64-ucrt-x86_64-gdb`
+- Verify in **File → Settings → Build, Execution, Deployment → Toolchains** that the Debugger field shows the path to `gdb.exe` (Windows) or `gdb` (Linux) or `lldb` (macOS)
+
+### Issue: CLion is slow or unresponsive
+**Solution:**
+- Close unused editor tabs
+- Go to **File → Invalidate Caches / Restart** to clear CLion's cache
+- If you have many projects open, close the ones you're not working on
 
 ---
 
-## 11. Next Steps
+## 10. Next Steps
 
 Once everything is working:
 
@@ -358,15 +280,13 @@ Once everything is working:
 
 ---
 
-## 12. Additional Resources & Official Documentation
+## 11. Additional Resources
 
-- [VS Code Setup Guide](https://code.visualstudio.com/docs/setup/setup-overview) — Official platform-specific setup
-- [CMake Download & Installation](https://cmake.org/download/) — Official CMake download page
-- [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) — Official MSVC tools
-- [VS Code C++ Setup Guide](https://code.visualstudio.com/docs/languages/cpp) — Official C++ extension guide
+- [CLion Getting Started Guide](https://www.jetbrains.com/help/clion/clion-quick-start-guide.html) — Official CLion documentation
+- [CLion Debugging Tutorial](https://www.jetbrains.com/help/clion/debugging-code.html) — How to use the debugger effectively
+- [CMake Documentation](https://cmake.org/cmake/help/latest/) — CMake reference
 - [C++11 Reference](https://en.cppreference.com/w/cpp/11) — Language reference
-- [GDB Debugging Guide](https://sourceware.org/gdb/documentation/) — Debugger for Linux/Windows
-- [LLDB Debugging Guide](https://lldb.llvm.org/use/tutorial.html) — Debugger for macOS
+- [JetBrains Student License](https://www.jetbrains.com/community/education/#students) — Renew your free license annually
 
 ---
 
