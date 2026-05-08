@@ -2,7 +2,18 @@
 
 ## Before You Start
 
-You should have received a file called **`step-counting-starter.zip`**. Unzip it to a folder on your computer (e.g., your Desktop or Documents). All of the starter code and data files are included.
+The starter code is hosted on GitHub. Get it by cloning the repository or downloading it directly:
+
+**Option A — Clone with Git (recommended):**
+```bash
+git clone https://github.com/jforsyth/ENGR445-sp2026-student.git
+```
+The project will be at `ENGR445-sp2026-student/assignments/step-counting/`.
+
+**Option B — Download without Git:**
+1. Go to: https://github.com/jforsyth/ENGR445-sp2026-student
+2. Click the green **"Code"** button → **"Download ZIP"**
+3. Unzip it and navigate to the `assignments/step-counting/` folder
 
 Then follow the steps below to install CLion and get started.
 
